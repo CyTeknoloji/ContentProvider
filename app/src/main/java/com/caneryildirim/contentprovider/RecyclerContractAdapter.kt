@@ -5,7 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.caneryildirim.contentprovider.databinding.RecyclerContractRowBinding
 
-class RecyclerContractAdapter(private val contractList:ArrayList<String>):RecyclerView.Adapter<RecyclerContractAdapter.ContractHolder>() {
+class RecyclerContractAdapter(private val contractList:ArrayList<Users>):RecyclerView.Adapter<RecyclerContractAdapter.ContractHolder>() {
     class ContractHolder(val binding:RecyclerContractRowBinding):RecyclerView.ViewHolder(binding.root) {
 
     }
@@ -20,6 +20,7 @@ class RecyclerContractAdapter(private val contractList:ArrayList<String>):Recycl
     }
 
     override fun onBindViewHolder(holder: ContractHolder, position: Int) {
-        holder.binding.textView.text=contractList[position]
+        holder.binding.textViewUserName.text=contractList[position].username
+        holder.binding.textViewPhoneNumber.text=contractList[position].phoneNumber
     }
 }

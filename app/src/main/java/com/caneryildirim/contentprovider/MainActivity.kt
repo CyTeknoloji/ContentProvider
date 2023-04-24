@@ -22,7 +22,7 @@ import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding:ActivityMainBinding
-    private var contractList=ArrayList<String>()
+    private var contractList=ArrayList<Users>()
     private lateinit var permiisonLauncher: ActivityResultLauncher<String>
 
     @SuppressLint("Range")
@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                 getContacts()
             }else{
                 Snackbar.make(view,"İzin gerekli",Snackbar.LENGTH_INDEFINITE).setAction("İzin ver",View.OnClickListener {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this,Manifest.permission.READ_CONTACTS)){
+                    if (isShouldRationale(Manifest.permission.READ_CONTACTS)){
                         permiisonLauncher.launch(Manifest.permission.READ_CONTACTS)
                     }else{
                         val intent=Intent()
@@ -64,18 +64,47 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("Range")
     private fun getContacts() {
-        val projection= arrayOf<String>(ContactsContract.Contacts.DISPLAY_NAME)
-        val cursor=contentResolver.query(ContactsContract.Contacts.CONTENT_URI,
+        val projection = arrayOf<String>(ContactsContract.Contacts.DISPLAY_NAME,
+                                        ContactsContract.Contacts.HAS_PHONE_NUMBER,
+                                        ContactsContract.Contacts._ID)
+        val cursor = contentResolver.query(ContactsContract.Contacts.CONTENT_URI,
             projection, null,null,ContactsContract.Contacts.DISPLAY_NAME)
 
-        cursor?.let {
-            val columIx=ContactsContract.Contacts.DISPLAY_NAME
-            while (it.moveToNext()){
-                contractList.add(it.getString(it.getColumnIndex(columIx)))
+        cursor?.let {c->
+            contractList.clear()
+            val columIxName = ContactsContract.Contacts.DISPLAY_NAME
+            val columIxPhone = ContactsContract.Contacts.HAS_PHONE_NUMBER
+            val columIxId = ContactsContract.Contacts._ID
+
+            while (c.moveToNext()){
+                val contractId = c.getString(c.getColumnIndex(columIxId))
+                val userName = c.getString(c.getColumnIndex(columIxName))
+                val hasPhoneNumber = c.getString(c.getColumnIndex(columIxPhone))
+                var phoneNumber : String? = null
+
+                if (hasPhoneNumber == "1"){
+                    val phoneCursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null,
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "+ contractId,null,null
+                    )
+
+                    phoneCursor?.let { pC->
+                        while (pC.moveToNext()){
+                            phoneNumber = pC.getString(pC.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                        }
+                        pC.close()
+                    }
+                }
+                phoneNumber?.let {pN->
+                    addUser(userName,pN)
+                }?:{
+                    addUser(userName,"null")
+                }
+
+
             }
-            it.close()
-            val adapter=RecyclerContractAdapter(contractList)
-            binding.recyclerView.adapter=adapter
+            c.close()
+            val adapter = RecyclerContractAdapter(contractList)
+            binding.recyclerView.adapter = adapter
         }
     }
 
@@ -88,5 +117,10 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this,"izin verilmedi",Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun addUser(userName:String,phoneNumber:String){
+        val user = Users(userName,phoneNumber)
+        contractList.add(user)
     }
 }
